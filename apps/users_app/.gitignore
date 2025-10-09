@@ -44,3 +44,4 @@ app.*.map.json
 
 # Ignore environment files that contain secrets
 .env
+google-services.json

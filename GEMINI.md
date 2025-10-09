@@ -40,5 +40,5 @@ Não seremos apenas digitadores de código. A cada passo relevante, vou extrair 
 
 ### Princípio #4: Commit e Push para Github (A cada confirmação de sucesso)
 
-A cada tarefa concluida, que seja bem sucedida e confirmada por mim 
+A cada tarefa concluida, que seja bem sucedida e confirmation por mim 
 *   **commit:** (Mensagem objetiva: "Implementado o  `StreamBuilder`...").

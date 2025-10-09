@@ -99,6 +99,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _onDestinationChanged(String input) {
+    if (kDebugMode) print('DEBUG: _onDestinationChanged - input: $input, destinationController.text: ${_destinationController.text}');
     // Cancela o timer anterior para evitar chamadas múltiplas
     if (_debounce?.isActive ?? false) _debounce!.cancel();
     // Inicia um novo timer
@@ -123,6 +124,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    if (kDebugMode) print('DEBUG: build - destinationController.text: ${_destinationController.text}');
     return Scaffold(
       appBar: AppBar(
         title: const Text('Uber Clone'),
@@ -266,6 +268,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           _destinationController.text = suggestion.description;
                           _suggestions = [];
                         });
+                        if (kDebugMode) print('DEBUG: onTap - destinationController.text set to: ${_destinationController.text}');
                       },
                     );
                   },
