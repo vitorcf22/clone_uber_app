@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:fl_chart/fl_chart.dart';
 import 'package:admin_web_panel/services/admin_auth_service.dart';
 import 'package:admin_web_panel/screens/authentication/login_screen.dart';
 import 'package:admin_web_panel/screens/management/users_management_screen.dart';
@@ -10,6 +11,7 @@ import 'package:admin_web_panel/services/user_service.dart';
 import 'package:admin_web_panel/services/driver_service.dart';
 import 'package:admin_web_panel/services/ride_service.dart';
 import 'package:admin_web_panel/services/payment_service.dart';
+import 'package:admin_web_panel/widgets/status_pie_chart.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -196,6 +198,142 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   isRevenue: true,
                 ),
               ],
+            ),
+            const SizedBox(height: 40),
+            // Gráficos
+            const Text(
+              'Análises e Estatísticas',
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 24),
+            Row(
+              children: [
+                Expanded(
+                  child: StatusPieChart(
+                    title: 'Distribuição de Corridas por Status',
+                    dataMap: {
+                      'Aguardando': 45,
+                      'Em Andamento': 23,
+                      'Concluída': 128,
+                      'Cancelada': 12,
+                    },
+                    colorMap: {
+                      'Aguardando': Colors.orange,
+                      'Em Andamento': Colors.blue,
+                      'Concluída': Colors.green,
+                      'Cancelada': Colors.red,
+                    },
+                  ),
+                ),
+                const SizedBox(width: 24),
+                Expanded(
+                  child: StatusPieChart(
+                    title: 'Distribuição de Usuários',
+                    dataMap: {
+                      'Ativos': 234,
+                      'Inativos': 45,
+                    },
+                    colorMap: {
+                      'Ativos': Colors.green,
+                      'Inativos': Colors.grey,
+                    },
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 24),
+            // Gráfico de Receita
+            Card(
+              elevation: 4,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Receita dos Últimos 7 Dias',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    SizedBox(
+                      height: 300,
+                      child: LineChart(
+                        LineChartData(
+                          gridData: GridData(show: true),
+                          titlesData: FlTitlesData(
+                            leftTitles: AxisTitles(
+                              sideTitles: SideTitles(
+                                showTitles: true,
+                                reservedSize: 50,
+                                getTitlesWidget: (value, meta) {
+                                  return Text(
+                                    'R\$ ${value.toStringAsFixed(0)}',
+                                    style: const TextStyle(fontSize: 10),
+                                  );
+                                },
+                              ),
+                            ),
+                            bottomTitles: AxisTitles(
+                              sideTitles: SideTitles(
+                                showTitles: true,
+                                getTitlesWidget: (value, meta) {
+                                  final days = [
+                                    'Seg',
+                                    'Ter',
+                                    'Qua',
+                                    'Qui',
+                                    'Sex',
+                                    'Sab',
+                                    'Dom'
+                                  ];
+                                  final index = value.toInt();
+                                  return Text(
+                                    index < days.length ? days[index] : '',
+                                    style: const TextStyle(fontSize: 10),
+                                  );
+                                },
+                              ),
+                            ),
+                          ),
+                          borderData: FlBorderData(show: true),
+                          minX: 0,
+                          maxX: 6,
+                          minY: 0,
+                          maxY: 5000,
+                          lineBarsData: [
+                            LineBarData(
+                              spots: const [
+                                FlSpot(0, 1200),
+                                FlSpot(1, 1900),
+                                FlSpot(2, 1500),
+                                FlSpot(3, 2300),
+                                FlSpot(4, 2100),
+                                FlSpot(5, 2800),
+                                FlSpot(6, 2500),
+                              ],
+                              isCurved: true,
+                              color: Colors.deepPurple,
+                              barWidth: 3,
+                              belowBarData: BarAreaData(
+                                show: true,
+                                color: Colors.deepPurple.withOpacity(0.2),
+                              ),
+                              dotData: FlDotData(show: true),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ),
           ],
         ),
