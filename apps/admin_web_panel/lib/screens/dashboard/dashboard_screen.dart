@@ -2,6 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:admin_web_panel/services/admin_auth_service.dart';
 import 'package:admin_web_panel/screens/authentication/login_screen.dart';
+import 'package:admin_web_panel/screens/management/users_management_screen.dart';
+import 'package:admin_web_panel/screens/management/drivers_management_screen.dart';
+import 'package:admin_web_panel/screens/management/rides_monitoring_screen.dart';
+import 'package:admin_web_panel/screens/management/payments_management_screen.dart';
+import 'package:admin_web_panel/services/user_service.dart';
+import 'package:admin_web_panel/services/driver_service.dart';
+import 'package:admin_web_panel/services/ride_service.dart';
+import 'package:admin_web_panel/services/payment_service.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -12,7 +20,13 @@ class DashboardScreen extends StatefulWidget {
 
 class _DashboardScreenState extends State<DashboardScreen> {
   final AdminAuthService _authService = AdminAuthService();
+  final UserService _userService = UserService();
+  final DriverService _driverService = DriverService();
+  final RideService _rideService = RideService();
+  final PaymentService _paymentService = PaymentService();
+
   late User? _currentUser;
+  int _selectedIndex = 0;
 
   @override
   void initState() {
@@ -24,6 +38,31 @@ class _DashboardScreenState extends State<DashboardScreen> {
     await _authService.signOut();
     if (mounted) {
       Navigator.of(context).pushReplacementNamed('/login');
+    }
+  }
+
+  void _navigateTo(int index) {
+    setState(() {
+      _selectedIndex = index;
+    });
+  }
+
+  Widget _getCurrentScreen() {
+    switch (_selectedIndex) {
+      case 0:
+        return _buildDashboardContent();
+      case 1:
+        return const UsersManagementScreen();
+      case 2:
+        return const DriversManagementScreen();
+      case 3:
+        return const RidesMonitoringScreen();
+      case 4:
+        return const PaymentsManagementScreen();
+      case 5:
+        return _buildSettingsContent();
+      default:
+        return _buildDashboardContent();
     }
   }
 
@@ -55,10 +94,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
         children: [
           // Sidebar
           NavigationRail(
-            selectedIndex: 0,
-            onDestinationSelected: (int index) {
-              // Handle navigation
-            },
+            selectedIndex: _selectedIndex,
+            onDestinationSelected: _navigateTo,
             labelType: NavigationRailLabelType.selected,
             destinations: const <NavigationRailDestination>[
               NavigationRailDestination(
@@ -95,110 +132,181 @@ class _DashboardScreenState extends State<DashboardScreen> {
           ),
           // Main Content
           Expanded(
-            child: SingleChildScrollView(
-              child: Padding(
-                padding: const EdgeInsets.all(24.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Bem-vindo ao Admin Panel',
-                      style: TextStyle(
-                        fontSize: 32,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.deepPurple,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Olá, ${_currentUser?.email ?? "Admin"}! 👋',
-                      style: const TextStyle(
-                        fontSize: 16,
-                        color: Colors.grey,
-                      ),
-                    ),
-                    const SizedBox(height: 40),
-                    // Dashboard Cards
-                    GridView.count(
-                      shrinkWrap: true,
-                      crossAxisCount: 4,
-                      crossAxisSpacing: 16,
-                      mainAxisSpacing: 16,
-                      children: [
-                        _buildDashboardCard(
-                          title: 'Total de Usuários',
-                          value: '1,234',
-                          icon: Icons.people,
-                          color: Colors.blue,
-                        ),
-                        _buildDashboardCard(
-                          title: 'Total de Motoristas',
-                          value: '456',
-                          icon: Icons.directions_car,
-                          color: Colors.green,
-                        ),
-                        _buildDashboardCard(
-                          title: 'Corridas Ativas',
-                          value: '89',
-                          icon: Icons.receipt,
-                          color: Colors.orange,
-                        ),
-                        _buildDashboardCard(
-                          title: 'Receita Total',
-                          value: 'R\$ 12.5K',
-                          icon: Icons.attach_money,
-                          color: Colors.red,
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ),
+            child: _getCurrentScreen(),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildDashboardCard({
-    required String title,
-    required String value,
-    required IconData icon,
-    required Color color,
-  }) {
-    return Card(
-      elevation: 4,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+  Widget _buildDashboardContent() {
+    return SingleChildScrollView(
       child: Padding(
-        padding: const EdgeInsets.all(20.0),
+        padding: const EdgeInsets.all(24.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Icon(icon, color: color, size: 36),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            const Text(
+              'Bem-vindo ao Admin Panel',
+              style: TextStyle(
+                fontSize: 32,
+                fontWeight: FontWeight.bold,
+                color: Colors.deepPurple,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Olá, ${_currentUser?.email ?? "Admin"}! 👋',
+              style: const TextStyle(
+                fontSize: 16,
+                color: Colors.grey,
+              ),
+            ),
+            const SizedBox(height: 40),
+            // Dashboard Cards
+            GridView.count(
+              shrinkWrap: true,
+              crossAxisCount: 4,
+              crossAxisSpacing: 16,
+              mainAxisSpacing: 16,
               children: [
-                Text(
-                  title,
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey,
-                  ),
+                _buildDashboardCardWithStream(
+                  title: 'Total de Usuários',
+                  icon: Icons.people,
+                  color: Colors.blue,
+                  futureBuilder: _userService.getUserCount(),
                 ),
-                const SizedBox(height: 8),
-                Text(
-                  value,
-                  style: const TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                  ),
+                _buildDashboardCardWithStream(
+                  title: 'Total de Motoristas',
+                  icon: Icons.directions_car,
+                  color: Colors.green,
+                  futureBuilder: _driverService.getDriverCount(),
+                ),
+                _buildDashboardCardWithStream(
+                  title: 'Corridas Ativas',
+                  icon: Icons.receipt,
+                  color: Colors.orange,
+                  futureBuilder: _rideService.getActiveRideCount(),
+                ),
+                _buildDashboardCardWithStream(
+                  title: 'Receita Total',
+                  icon: Icons.attach_money,
+                  color: Colors.red,
+                  futureBuilder: _paymentService.getTotalRevenue(),
+                  isRevenue: true,
                 ),
               ],
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildDashboardCardWithStream({
+    required String title,
+    required IconData icon,
+    required Color color,
+    required Future<dynamic> futureBuilder,
+    bool isRevenue = false,
+  }) {
+    return FutureBuilder<dynamic>(
+      future: futureBuilder,
+      builder: (context, snapshot) {
+        String displayValue = '...';
+        if (snapshot.hasData) {
+          if (isRevenue) {
+            displayValue = 'R\$ ${(snapshot.data as double).toStringAsFixed(2)}';
+          } else {
+            displayValue = snapshot.data.toString();
+          }
+        }
+
+        return Card(
+          elevation: 4,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          child: Padding(
+            padding: const EdgeInsets.all(20.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Icon(icon, color: color, size: 36),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      displayValue,
+                      style: const TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildSettingsContent() {
+    return Padding(
+      padding: const EdgeInsets.all(24.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Configurações',
+            style: TextStyle(
+              fontSize: 28,
+              fontWeight: FontWeight.bold,
+              color: Colors.deepPurple,
+            ),
+          ),
+          const SizedBox(height: 24),
+          Card(
+            elevation: 2,
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Sobre o Sistema',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  const Text('Clone Uber - Admin Panel v1.0.0'),
+                  const SizedBox(height: 8),
+                  const Text('Desenvolvido com Flutter e Firebase'),
+                  const SizedBox(height: 24),
+                  ElevatedButton(
+                    onPressed: _handleLogout,
+                    style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+                    child: const Text(
+                      'Fazer Logout',
+                      style: TextStyle(color: Colors.white),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
