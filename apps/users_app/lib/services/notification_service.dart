@@ -224,18 +224,31 @@ class NotificationService {
   // Callbacks para diferentes tipos de notificação
   void _onRideAssigned(String? rideId) {
     if (kDebugMode) print('Motorista atribuído à corrida: $rideId');
+    // Aqui você pode:
+    // - Atualizar UI
+    // - Reproduzir som
+    // - Enviar para analytics
+    // - Atualizar cache local
   }
 
   void _onRideStarted(String? rideId) {
     if (kDebugMode) print('Corrida iniciou: $rideId');
+    // Transição automática para RideTrackingScreen
+    // Iniciar atualização de localização em tempo real
   }
 
   void _onRideCompleted(String? rideId) {
     if (kDebugMode) print('Corrida completada: $rideId');
+    // Notificar usuário que pode avaliar
+    // Preparar dados para RatingScreen
+    // Limpar dados de rastreamento
   }
 
   void _onDriverArrived(String? rideId) {
     if (kDebugMode) print('Motorista chegou: $rideId');
+    // Mostrar alerta visual
+    // Destacar notificação
+    // Permitir iniciar corrida
   }
 
   // Enviar notificação para outro usuário via Firestore

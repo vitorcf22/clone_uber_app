@@ -90,17 +90,88 @@ class RideService {
     }
   }
 
-  // Atualizar status da corrida
+  // Atualizar status da corrida e notificar usuário
   Future<void> updateRideStatus(String rideId, String status) async {
     try {
+      // Obter dados da corrida antes de atualizar
+      final rideDoc = await _firestore.collection('rides').doc(rideId).get();
+      final rideData = rideDoc.data() as Map<String, dynamic>?;
+      final userId = rideData?['userId'] as String?;
+
+      // Atualizar status
       await _firestore.collection('rides').doc(rideId).update({
         'status': status,
         if (status == 'in_progress') 'startedAt': DateTime.now(),
         if (status == 'completed') 'completedAt': DateTime.now(),
       });
+
+      // Enviar notificação ao usuário sobre mudança de status
+      if (userId != null) {
+        await _sendRideStatusNotification(
+          userId: userId,
+          rideId: rideId,
+          status: status,
+          rideData: rideData,
+        );
+      }
     } catch (e) {
       print('Erro ao atualizar status da corrida: $e');
       rethrow;
+    }
+  }
+
+  // Enviar notificação de mudança de status
+  Future<void> _sendRideStatusNotification({
+    required String userId,
+    required String rideId,
+    required String status,
+    required Map<String, dynamic> rideData,
+  }) async {
+    try {
+      late String title;
+      late String body;
+      late String type;
+
+      switch (status) {
+        case 'assigned':
+          title = '🚗 Motorista Encontrado!';
+          body = 'Um motorista foi atribuído à sua corrida e está a caminho';
+          type = 'ride_assigned';
+          break;
+        case 'in_progress':
+          title = '✅ Corrida Iniciada!';
+          body = 'Seu motorista começou a corrida. Acompanhe em tempo real';
+          type = 'ride_started';
+          break;
+        case 'completed':
+          title = '🎉 Corrida Finalizada!';
+          body = 'Sua corrida foi finalizada. Avalie seu motorista';
+          type = 'ride_completed';
+          break;
+        case 'cancelled':
+          title = '❌ Corrida Cancelada';
+          body = 'Sua corrida foi cancelada';
+          type = 'ride_cancelled';
+          break;
+        default:
+          return;
+      }
+
+      // Armazenar notificação no Firestore
+      await _firestore.collection('notifications').add({
+        'userId': userId,
+        'rideId': rideId,
+        'type': type,
+        'title': title,
+        'body': body,
+        'status': status,
+        'sent': false,
+        'createdAt': DateTime.now(),
+      });
+
+      print('Notificação de status enviada: $title');
+    } catch (e) {
+      print('Erro ao enviar notificação de status: $e');
     }
   }
 

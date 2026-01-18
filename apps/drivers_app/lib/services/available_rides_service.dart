@@ -114,14 +114,72 @@ class AvailableRidesService {
   /// Atualizar status da corrida
   Future<void> updateRideStatus(String rideId, String newStatus) async {
     try {
+      // Obter dados da corrida antes de atualizar
+      final rideDoc = await _firestore.collection('rides').doc(rideId).get();
+      final rideData = rideDoc.data() as Map<String, dynamic>?;
+      final userId = rideData?['userId'] as String?;
+
       await _firestore.collection('rides').doc(rideId).update({
         'status': newStatus,
         'updatedAt': DateTime.now(),
         if (newStatus == 'in_progress') 'startedAt': DateTime.now(),
         if (newStatus == 'completed') 'completedAt': DateTime.now(),
       });
+
+      // Enviar notificação ao usuário sobre mudança de status
+      if (userId != null) {
+        await _sendRideStatusNotification(
+          userId: userId,
+          rideId: rideId,
+          status: newStatus,
+        );
+      }
     } catch (e) {
       throw Exception('Erro ao atualizar status da corrida: $e');
+    }
+  }
+
+  /// Enviar notificação de mudança de status para o usuário
+  Future<void> _sendRideStatusNotification({
+    required String userId,
+    required String rideId,
+    required String status,
+  }) async {
+    try {
+      late String title;
+      late String body;
+      late String type;
+
+      switch (status) {
+        case 'in_progress':
+          title = '✅ Corrida Iniciada!';
+          body = 'Seu motorista começou a corrida. Acompanhe em tempo real';
+          type = 'ride_started';
+          break;
+        case 'completed':
+          title = '🎉 Corrida Finalizada!';
+          body = 'Sua corrida foi finalizada. Avalie seu motorista';
+          type = 'ride_completed';
+          break;
+        default:
+          return;
+      }
+
+      // Armazenar notificação no Firestore
+      await _firestore.collection('notifications').add({
+        'userId': userId,
+        'rideId': rideId,
+        'type': type,
+        'title': title,
+        'body': body,
+        'status': status,
+        'sent': false,
+        'createdAt': DateTime.now(),
+      });
+
+      print('Notificação de status enviada: $title');
+    } catch (e) {
+      print('Erro ao enviar notificação de status: $e');
     }
   }
 

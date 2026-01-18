@@ -222,14 +222,20 @@ class DriverNotificationService {
   // Callbacks para diferentes tipos de notificação
   void _onNewRideAvailable(String? rideId) {
     if (kDebugMode) print('Driver - Nova corrida disponível: $rideId');
+    // Abrir AvailableRidesScreen automaticamente
+    // Destacar corrida na lista
   }
 
   void _onRideAccepted(String? rideId) {
     if (kDebugMode) print('Driver - Corrida aceita (pode ser outro motorista): $rideId');
+    // Remover da lista de disponíveis
+    // Limpar notificação
   }
 
   void _onUserCancelled(String? rideId) {
     if (kDebugMode) print('Driver - Usuário cancelou corrida: $rideId');
+    // Notificar e remover da lista
+    // Restaurar disponibilidade
   }
 
   // Método público para mostrar notificação local (usado pelo RideListenerService)
