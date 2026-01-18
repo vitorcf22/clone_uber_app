@@ -8,10 +8,53 @@ class RideService {
   Future<String> createRideRequest(RideRequest rideRequest) async {
     try {
       final docRef = await _firestore.collection('rides').add(rideRequest.toMap());
+      
+      // Notificar motoristas próximos sobre nova corrida
+      await _notifyNearbyDrivers(
+        rideId: docRef.id,
+        origin: rideRequest.origin,
+        originLat: rideRequest.originLat,
+        originLng: rideRequest.originLng,
+        rideType: rideRequest.rideType,
+      );
+      
       return docRef.id;
     } catch (e) {
       print('Erro ao criar solicitação de corrida: $e');
       rethrow;
+    }
+  }
+
+  // Notificar motoristas próximos sobre nova corrida
+  Future<void> _notifyNearbyDrivers({
+    required String rideId,
+    required String origin,
+    required double originLat,
+    required double originLng,
+    required String rideType,
+  }) async {
+    try {
+      // Armazenar notificação genérica que será processada por Cloud Function
+      // A Cloud Function vai consultar drivers online próximos e enviar notificações individuais
+      await _firestore
+          .collection('ride_notifications')
+          .add({
+        'rideId': rideId,
+        'origin': origin,
+        'originLat': originLat,
+        'originLng': originLng,
+        'rideType': rideType,
+        'type': 'new_ride_available',
+        'title': '🚗 Nova Corrida Disponível!',
+        'body': 'Corrida de $rideType saindo de $origin',
+        'createdAt': DateTime.now(),
+        'processed': false,
+      });
+
+      print('Notificação de nova corrida criada para motoristas');
+    } catch (e) {
+      print('Erro ao notificar motoristas: $e');
+      // Não fazer rethrow pois é uma funcionalidade secundária
     }
   }
 

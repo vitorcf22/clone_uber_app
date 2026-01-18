@@ -232,6 +232,57 @@ class DriverNotificationService {
     if (kDebugMode) print('Driver - Usuário cancelou corrida: $rideId');
   }
 
+  // Método público para mostrar notificação local (usado pelo RideListenerService)
+  Future<void> showLocalNotification({
+    required int id,
+    required String title,
+    required String body,
+    Map<String, dynamic>? payload,
+    bool playSound = true,
+    bool useAlertSound = false,
+    bool enableVibration = true,
+  }) async {
+    try {
+      final AndroidNotificationDetails androidDetails =
+          AndroidNotificationDetails(
+        'driver_notifications',
+        'Notificações de Corridas',
+        channelDescription: 'Notificações de novas corridas disponíveis',
+        importance: Importance.max,
+        priority: Priority.high,
+        icon: '@mipmap/ic_launcher',
+        enableVibration: enableVibration,
+        playSound: playSound,
+        sound: useAlertSound ? const RawResourceAndroidNotificationSound('alert') : null,
+        styleInformation: const BigTextStyleInformation(''),
+      );
+
+      final DarwinNotificationDetails iosDetails = DarwinNotificationDetails(
+        presentAlert: true,
+        presentBadge: true,
+        presentSound: playSound,
+        sound: useAlertSound ? 'default' : null,
+      );
+
+      final NotificationDetails platformDetails = NotificationDetails(
+        android: androidDetails,
+        iOS: iosDetails,
+      );
+
+      await _localNotifications.show(
+        id,
+        title,
+        body,
+        platformDetails,
+        payload: payload != null ? payload.toString() : null,
+      );
+
+      if (kDebugMode) print('Driver - Notificação local exibida: $title');
+    } catch (e) {
+      if (kDebugMode) print('Driver - Erro ao exibir notificação local: $e');
+    }
+  }
+
   // Deletar token ao fazer logout
   Future<void> deleteToken() async {
     try {

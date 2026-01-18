@@ -6,6 +6,8 @@ import 'package:drivers_app/screens/authentication/driver_login_screen.dart';
 import 'package:drivers_app/screens/authentication/driver_signup_screen.dart';
 import 'package:drivers_app/screens/dashboard/driver_dashboard.dart';
 import 'package:drivers_app/services/driver_notification_service.dart';
+import 'package:drivers_app/services/ride_listener_service.dart';
+import 'package:geolocator/geolocator.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -26,16 +28,42 @@ class DriverApp extends StatefulWidget {
 
 class _DriverAppState extends State<DriverApp> {
   late DriverNotificationService _notificationService;
+  late RideListenerService _rideListenerService;
 
   @override
   void initState() {
     super.initState();
     _initializeNotifications();
+    _initializeRideListener();
   }
 
   Future<void> _initializeNotifications() async {
     _notificationService = DriverNotificationService();
     await _notificationService.initialize();
+  }
+
+  Future<void> _initializeRideListener() async {
+    _rideListenerService = RideListenerService(_notificationService);
+    
+    // Iniciar escuta de novas corridas com localização atual
+    _getCurrentLocation();
+  }
+
+  Future<void> _getCurrentLocation() async {
+    try {
+      final position = await Geolocator.getCurrentPosition();
+      
+      if (mounted) {
+        _rideListenerService.startListeningForNewRides(
+          driverLat: position.latitude,
+          driverLng: position.longitude,
+          driverId: 'motorista', // Será substituído pela lógica real
+          radiusKm: 5.0,
+        );
+      }
+    } catch (e) {
+      print('Erro ao obter localização: $e');
+    }
   }
 
   @override
