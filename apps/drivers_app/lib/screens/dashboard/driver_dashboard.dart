@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:drivers_app/services/driver_auth_service.dart';
+import 'package:drivers_app/screens/rides/available_rides_screen.dart';
+import 'package:drivers_app/screens/rides/active_ride_screen.dart';
 
 class DriverDashboard extends StatefulWidget {
   const DriverDashboard({Key? key}) : super(key: key);
@@ -214,7 +216,49 @@ class _DriverDashboardState extends State<DriverDashboard> {
               ),
               const SizedBox(height: 24),
 
-              // Active Rides Section
+              // Botões de navegação
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) =>
+                            const AvailableRidesScreen(),
+                      ),
+                    );
+                  },
+                  icon: const Icon(Icons.directions_car),
+                  label: const Text('Ver Corridas Disponíveis'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.deepPurple,
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const ActiveRideScreen(),
+                      ),
+                    );
+                  },
+                  icon: const Icon(Icons.map),
+                  label: const Text('Minha Corrida Ativa'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.blue,
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 24),
               Align(
                 alignment: Alignment.centerLeft,
                 child: Text(
