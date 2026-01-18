@@ -60,10 +60,10 @@ class _StatusPieChartState extends State<StatusPieChart> {
                   pieTouchData: PieTouchData(
                     touchCallback: (FlTouchEvent event, pieTouchResponse) {
                       setState(() {
-                        if (!event.isInterestedForInteraction) {
+                        if (event is FlLongPressEnd || event is FlPanEndEvent) {
                           touchedIndex = -1;
-                        } else if (pieTouchResponse != null) {
-                          touchedIndex = pieTouchResponse.touchedSection?.touchedSectionIndex ?? -1;
+                        } else if (pieTouchResponse != null && pieTouchResponse.touchedSection != null) {
+                          touchedIndex = pieTouchResponse.touchedSection!.touchedSectionIndex;
                         }
                       });
                     },

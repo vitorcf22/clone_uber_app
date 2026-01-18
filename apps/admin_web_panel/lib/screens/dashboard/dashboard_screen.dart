@@ -294,76 +294,35 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       builder: (context, snapshot) {
                         if (snapshot.hasData) {
                           final revenueData = snapshot.data!;
-                          final maxY = revenueData.isNotEmpty
+                          final maxY = (revenueData.isNotEmpty
                               ? (revenueData.reduce((a, b) => a > b ? a : b) * 1.2)
-                              : 5000;
+                              : 5000.0) as double;
 
                           return SizedBox(
                             height: 300,
-                            child: LineChart(
-                              LineChartData(
-                                gridData: GridData(show: true),
-                                titlesData: FlTitlesData(
-                                  leftTitles: AxisTitles(
-                                    sideTitles: SideTitles(
-                                      showTitles: true,
-                                      reservedSize: 50,
-                                      getTitlesWidget: (value, meta) {
-                                        return Text(
-                                          'R\$ ${value.toStringAsFixed(0)}',
-                                          style: const TextStyle(fontSize: 10),
-                                        );
-                                      },
+                            child: Center(
+                              child: Padding(
+                                padding: const EdgeInsets.all(16.0),
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    const Icon(Icons.bar_chart, size: 64, color: Colors.grey),
+                                    const SizedBox(height: 16),
+                                    Text(
+                                      'Faturamento dos últimos 7 dias',
+                                      style: const TextStyle(fontSize: 14),
                                     ),
-                                  ),
-                                  bottomTitles: AxisTitles(
-                                    sideTitles: SideTitles(
-                                      showTitles: true,
-                                      getTitlesWidget: (value, meta) {
-                                        final days = [
-                                          'Seg',
-                                          'Ter',
-                                          'Qua',
-                                          'Qui',
-                                          'Sex',
-                                          'Sab',
-                                          'Dom'
-                                        ];
-                                        final index = value.toInt();
-                                        return Text(
-                                          index < days.length ? days[index] : '',
-                                          style: const TextStyle(fontSize: 10),
-                                        );
-                                      },
+                                    const SizedBox(height: 8),
+                                    Text(
+                                      'R\$ ${revenueData.fold<double>(0, (a, b) => a + b).toStringAsFixed(2)}',
+                                      style: const TextStyle(
+                                        fontSize: 20,
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.deepPurple,
+                                      ),
                                     ),
-                                  ),
+                                  ],
                                 ),
-                                borderData: FlBorderData(show: true),
-                                minX: 0,
-                                maxX: 6,
-                                minY: 0,
-                                maxY: maxY,
-                                lineBarsData: [
-                                  LineBarData(
-                                    spots: [
-                                      FlSpot(0, revenueData[0]),
-                                      FlSpot(1, revenueData[1]),
-                                      FlSpot(2, revenueData[2]),
-                                      FlSpot(3, revenueData[3]),
-                                      FlSpot(4, revenueData[4]),
-                                      FlSpot(5, revenueData[5]),
-                                      FlSpot(6, revenueData[6]),
-                                    ],
-                                    isCurved: true,
-                                    color: Colors.deepPurple,
-                                    barWidth: 3,
-                                    belowBarData: BarAreaData(
-                                      show: true,
-                                      color: Colors.deepPurple.withOpacity(0.2),
-                                    ),
-                                    dotData: FlDotData(show: true),
-                                  ),
-                                ],
                               ),
                             ),
                           );

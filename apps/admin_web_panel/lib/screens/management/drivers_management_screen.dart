@@ -16,12 +16,16 @@ class _DriversManagementScreenState extends State<DriversManagementScreen> {
   String _searchQuery = '';
   int _currentPage = 1;
   final int _itemsPerPage = 15;
+  List<Driver> _cachedFilteredDrivers = [];
 
   @override
   void dispose() {
     _searchController.dispose();
     super.dispose();
   }
+
+  /// Getter para os motoristas filtrados (usado na paginação)
+  List<Driver> get filteredDrivers => _cachedFilteredDrivers;
 
   @override
   Widget build(BuildContext context) {
@@ -76,17 +80,17 @@ class _DriversManagementScreenState extends State<DriversManagementScreen> {
                   }
 
                   final allDrivers = snapshot.data ?? [];
-                  final filteredDrivers = allDrivers
+                  _cachedFilteredDrivers = allDrivers
                       .where((driver) =>
                           driver.email.toLowerCase().contains(_searchQuery) ||
                           driver.name.toLowerCase().contains(_searchQuery))
                       .toList();
 
                   // Pagination
-                  final totalPages = (filteredDrivers.length / _itemsPerPage).ceil();
+                  final totalPages = (_cachedFilteredDrivers.length / _itemsPerPage).ceil();
                   final startIndex = (_currentPage - 1) * _itemsPerPage;
-                  final endIndex = (startIndex + _itemsPerPage).clamp(0, filteredDrivers.length);
-                  final paginatedDrivers = filteredDrivers.sublist(startIndex, endIndex);
+                  final endIndex = (startIndex + _itemsPerPage).clamp(0, _cachedFilteredDrivers.length);
+                  final paginatedDrivers = _cachedFilteredDrivers.sublist(startIndex, endIndex);
 
                   return SingleChildScrollView(
                     scrollDirection: Axis.horizontal,

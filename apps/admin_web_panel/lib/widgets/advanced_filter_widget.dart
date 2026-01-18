@@ -137,8 +137,7 @@ class _AdvancedFilterWidgetState extends State<AdvancedFilterWidget> {
                           min: 0,
                           max: 5,
                           divisions: 50,
-                          start: _minRating,
-                          end: _maxRating,
+                          values: RangeValues(_minRating, _maxRating),
                           onChanged: (RangeValues values) {
                             setState(() {
                               _minRating = values.start;

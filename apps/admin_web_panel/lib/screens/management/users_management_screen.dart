@@ -18,6 +18,7 @@ class _UsersManagementScreenState extends State<UsersManagementScreen> {
   String _filterStatus = 'All';
   int _currentPage = 1;
   final int _itemsPerPage = 15;
+  List<User> _cachedFilteredUsers = [];
 
   @override
   void dispose() {
@@ -32,6 +33,9 @@ class _UsersManagementScreenState extends State<UsersManagementScreen> {
       _currentPage = 1;
     });
   }
+
+  /// Getter para os usuários filtrados (usado na paginação)
+  List<User> get filteredUsers => _cachedFilteredUsers;
 
   @override
   Widget build(BuildContext context) {
@@ -49,7 +53,7 @@ class _UsersManagementScreenState extends State<UsersManagementScreen> {
             // Advanced Filter Widget
             AdvancedFilterWidget(
               filterOptions: const ['status'],
-              onApplyFilters: _applyFilters,
+              onFilterChanged: _applyFilters,
             ),
             const SizedBox(height: 24),
 
@@ -74,7 +78,7 @@ class _UsersManagementScreenState extends State<UsersManagementScreen> {
                   }
 
                   final allUsers = snapshot.data ?? [];
-                  final filteredUsers = allUsers
+                  _cachedFilteredUsers = allUsers
                       .where((user) {
                         bool matchSearch = _searchQuery.isEmpty ||
                             user.email.toLowerCase().contains(_searchQuery) ||
@@ -89,10 +93,10 @@ class _UsersManagementScreenState extends State<UsersManagementScreen> {
                       .toList();
 
                   // Pagination
-                  final totalPages = (filteredUsers.length / _itemsPerPage).ceil();
+                  final totalPages = (_cachedFilteredUsers.length / _itemsPerPage).ceil();
                   final startIndex = (_currentPage - 1) * _itemsPerPage;
-                  final endIndex = (startIndex + _itemsPerPage).clamp(0, filteredUsers.length);
-                  final paginatedUsers = filteredUsers.sublist(startIndex, endIndex);
+                  final endIndex = (startIndex + _itemsPerPage).clamp(0, _cachedFilteredUsers.length);
+                  final paginatedUsers = _cachedFilteredUsers.sublist(startIndex, endIndex);
 
                   return SingleChildScrollView(
                     scrollDirection: Axis.horizontal,

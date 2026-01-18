@@ -15,6 +15,7 @@ class _RidesMonitoringScreenState extends State<RidesMonitoringScreen> {
   String _selectedStatus = 'all'; // all, pending, in_progress, completed, cancelled
   int _currentPage = 1;
   final int _itemsPerPage = 15;
+  List<Ride> _cachedFilteredRides = [];
 
   final List<String> _statusOptions = [
     'all',
@@ -23,6 +24,9 @@ class _RidesMonitoringScreenState extends State<RidesMonitoringScreen> {
     'completed',
     'cancelled'
   ];
+
+  /// Getter para as corridas filtradas (usado na paginação)
+  List<Ride> get filteredRides => _cachedFilteredRides;
 
   @override
   Widget build(BuildContext context) {
@@ -88,17 +92,17 @@ class _RidesMonitoringScreenState extends State<RidesMonitoringScreen> {
                   }
 
                   final allRides = snapshot.data ?? [];
-                  final filteredRides = _selectedStatus == 'all'
+                  _cachedFilteredRides = _selectedStatus == 'all'
                       ? allRides
                       : allRides
                           .where((ride) => ride.status == _selectedStatus)
                           .toList();
 
                   // Pagination
-                  final totalPages = (filteredRides.length / _itemsPerPage).ceil();
+                  final totalPages = (_cachedFilteredRides.length / _itemsPerPage).ceil();
                   final startIndex = (_currentPage - 1) * _itemsPerPage;
-                  final endIndex = (startIndex + _itemsPerPage).clamp(0, filteredRides.length);
-                  final paginatedRides = filteredRides.sublist(startIndex, endIndex);
+                  final endIndex = (startIndex + _itemsPerPage).clamp(0, _cachedFilteredRides.length);
+                  final paginatedRides = _cachedFilteredRides.sublist(startIndex, endIndex);
 
                   return SingleChildScrollView(
                     scrollDirection: Axis.horizontal,
