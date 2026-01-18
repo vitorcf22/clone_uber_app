@@ -103,4 +103,32 @@ class RideService {
       print('Erro ao atualizar localização do motorista: $e');
     }
   }
+
+  // Enviar notificação para o usuário (via Cloud Messaging)
+  Future<void> sendNotificationToUser({
+    required String userId,
+    required String rideId,
+    required String type,
+    required String title,
+    required String body,
+  }) async {
+    try {
+      // Armazenar notificação no Firestore para Cloud Functions processar
+      await _firestore
+          .collection('notifications')
+          .add({
+        'userId': userId,
+        'rideId': rideId,
+        'type': type,
+        'title': title,
+        'body': body,
+        'sent': false,
+        'createdAt': DateTime.now(),
+      });
+
+      print('Notificação agendada para usuário: $userId');
+    } catch (e) {
+      print('Erro ao agendar notificação: $e');
+    }
+  }
 }

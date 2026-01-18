@@ -5,6 +5,7 @@ import 'package:drivers_app/screens/authentication/splash_screen.dart';
 import 'package:drivers_app/screens/authentication/driver_login_screen.dart';
 import 'package:drivers_app/screens/authentication/driver_signup_screen.dart';
 import 'package:drivers_app/screens/dashboard/driver_dashboard.dart';
+import 'package:drivers_app/services/driver_notification_service.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -16,8 +17,26 @@ Future<void> main() async {
   runApp(const DriverApp());
 }
 
-class DriverApp extends StatelessWidget {
+class DriverApp extends StatefulWidget {
   const DriverApp({Key? key}) : super(key: key);
+
+  @override
+  State<DriverApp> createState() => _DriverAppState();
+}
+
+class _DriverAppState extends State<DriverApp> {
+  late DriverNotificationService _notificationService;
+
+  @override
+  void initState() {
+    super.initState();
+    _initializeNotifications();
+  }
+
+  Future<void> _initializeNotifications() async {
+    _notificationService = DriverNotificationService();
+    await _notificationService.initialize();
+  }
 
   @override
   Widget build(BuildContext context) {

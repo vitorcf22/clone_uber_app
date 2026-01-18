@@ -54,6 +54,12 @@ class AvailableRidesService {
     if (userId == null) throw Exception('Usuário não autenticado');
 
     try {
+      // Obter dados da corrida para notificação
+      final rideDoc = await _firestore.collection('rides').doc(rideId).get();
+      final rideData = rideDoc.data() as Map<String, dynamic>;
+      final userId_ride = rideData['userId'] as String?;
+      final origin = rideData['origin'] as String?;
+
       await _firestore.collection('rides').doc(rideId).update({
         'driverId': userId,
         'status': 'assigned',
@@ -68,6 +74,21 @@ class AvailableRidesService {
         'totalRides': FieldValue.increment(1),
         'lastRideAt': DateTime.now(),
       });
+
+      // Enviar notificação para o usuário
+      if (userId_ride != null) {
+        await _sendNotificationToUser(
+          userId: userId_ride,
+          rideId: rideId,
+          type: 'ride_assigned',
+          title: 'Motorista Encontrado! 🚗',
+          body: 'Um motorista foi atribuído à sua corrida. Ele está chegando em $origin',
+        );
+      }
+    } catch (e) {
+      throw Exception('Erro ao aceitar corrida: $e');
+    }
+  }
     } catch (e) {
       throw Exception('Erro ao aceitar corrida: $e');
     }
@@ -124,6 +145,34 @@ class AvailableRidesService {
       // Futuramente: registrar recusa, calcular taxa de aceitação, etc.
     } catch (e) {
       throw Exception('Erro ao recusar corrida: $e');
+    }
+  }
+
+  /// Enviar notificação para o usuário
+  Future<void> _sendNotificationToUser({
+    required String userId,
+    required String rideId,
+    required String type,
+    required String title,
+    required String body,
+  }) async {
+    try {
+      // Armazenar notificação no Firestore para Cloud Functions processar
+      await _firestore
+          .collection('notifications')
+          .add({
+        'userId': userId,
+        'rideId': rideId,
+        'type': type,
+        'title': title,
+        'body': body,
+        'sent': false,
+        'createdAt': DateTime.now(),
+      });
+
+      print('Notificação agendada para usuário: $userId');
+    } catch (e) {
+      print('Erro ao agendar notificação: $e');
     }
   }
 
