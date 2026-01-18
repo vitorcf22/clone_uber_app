@@ -14,6 +14,17 @@ class PaymentsManagementScreen extends StatefulWidget {
 class _PaymentsManagementScreenState extends State<PaymentsManagementScreen> {
   final PaymentService _paymentService = PaymentService();
   late Future<double> _totalRevenue;
+  String _selectedStatus = 'all';
+  int _currentPage = 1;
+  final int _itemsPerPage = 15;
+
+  final List<String> _statusOptions = [
+    'all',
+    'pending',
+    'completed',
+    'failed',
+    'refunded',
+  ];
 
   @override
   void initState() {
@@ -89,6 +100,33 @@ class _PaymentsManagementScreenState extends State<PaymentsManagementScreen> {
               ),
             ),
             const SizedBox(height: 16),
+
+            // Status Filter
+            Row(
+              children: [
+                const Text(
+                  'Filtrar por Status:',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(width: 16),
+                DropdownButton<String>(
+                  value: _selectedStatus,
+                  items: _statusOptions.map((status) {
+                    return DropdownMenuItem(
+                      value: status,
+                      child: Text(status == 'all' ? 'Todos' : status),
+                    );
+                  }).toList(),
+                  onChanged: (value) {
+                    setState(() {
+                      _selectedStatus = value ?? 'all';
+                      _currentPage = 1;
+                    });
+                  },
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
             Expanded(
               child: StreamBuilder<List<Payment>>(
                 stream: _paymentService.getPaymentsStream(),
@@ -110,6 +148,21 @@ class _PaymentsManagementScreenState extends State<PaymentsManagementScreen> {
 
                   final payments = snapshot.data ?? [];
 
+                  // Filter by status
+                  final filteredPayments = _selectedStatus == 'all'
+                      ? payments
+                      : payments
+                          .where((payment) => payment.status == _selectedStatus)
+                          .toList();
+
+                  // Pagination
+                  final totalPages = (filteredPayments.length / _itemsPerPage).ceil();
+                  final startIndex = (_currentPage - 1) * _itemsPerPage;
+                  final endIndex =
+                      (startIndex + _itemsPerPage).clamp(0, filteredPayments.length);
+                  final paginatedPayments =
+                      filteredPayments.sublist(startIndex, endIndex);
+
                   return SingleChildScrollView(
                     scrollDirection: Axis.horizontal,
                     child: DataTable(
@@ -124,7 +177,7 @@ class _PaymentsManagementScreenState extends State<PaymentsManagementScreen> {
                         DataColumn(label: Text('Criado em')),
                         DataColumn(label: Text('Ações')),
                       ],
-                      rows: payments.map((payment) {
+                      rows: paginatedPayments.map((payment) {
                         return DataRow(
                           cells: [
                             DataCell(
@@ -205,6 +258,29 @@ class _PaymentsManagementScreenState extends State<PaymentsManagementScreen> {
                     ),
                   );
                 },
+              ),
+            ),
+            const SizedBox(height: 16),
+            // Pagination Controls
+            Center(
+              child: Wrap(
+                spacing: 8,
+                alignment: WrapAlignment.center,
+                children: [
+                  ElevatedButton(
+                    onPressed: _currentPage > 1
+                        ? () => setState(() => _currentPage--)
+                        : null,
+                    child: const Text('Anterior'),
+                  ),
+                  Text('Página $_currentPage'),
+                  ElevatedButton(
+                    onPressed: _currentPage < 5
+                        ? () => setState(() => _currentPage++)
+                        : null,
+                    child: const Text('Próxima'),
+                  ),
+                ],
               ),
             ),
           ],

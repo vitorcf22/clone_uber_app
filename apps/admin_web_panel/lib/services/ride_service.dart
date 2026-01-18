@@ -131,4 +131,67 @@ class RideService {
       return 0;
     }
   }
+
+  /// Retorna contagem de corridas por status (para gráficos).
+  Future<Map<String, int>> getRideCountByStatus() async {
+    try {
+      final snapshot = await _firestore.collection('rides').get();
+      final rides = snapshot.docs
+          .map((doc) => Ride.fromMap(doc.data() as Map<String, dynamic>, doc.id))
+          .toList();
+
+      final countByStatus = {
+        'pending': 0,
+        'in_progress': 0,
+        'completed': 0,
+        'cancelled': 0,
+      };
+
+      for (var ride in rides) {
+        countByStatus[ride.status] = (countByStatus[ride.status] ?? 0) + 1;
+      }
+
+      return countByStatus;
+    } catch (e) {
+      print('Erro ao contar corridas por status: $e');
+      return {
+        'pending': 0,
+        'in_progress': 0,
+        'completed': 0,
+        'cancelled': 0,
+      };
+    }
+  }
+
+  /// Retorna receita do último período por dia (para gráfico de linha).
+  Future<List<double>> get7DayRevenue() async {
+    try {
+      final now = DateTime.now();
+      final sevenDaysAgo = now.subtract(const Duration(days: 7));
+
+      final snapshot = await _firestore
+          .collection('payments')
+          .where('status', isEqualTo: 'completed')
+          .where('createdAt', isGreaterThanOrEqualTo: sevenDaysAgo)
+          .get();
+
+      final dailyRevenue = List<double>.filled(7, 0.0);
+
+      for (var doc in snapshot.docs) {
+        final data = doc.data() as Map<String, dynamic>;
+        final createdAt = (data['createdAt'] as Timestamp).toDate();
+        final amount = (data['amount'] as num).toDouble();
+        final daysAgo = now.difference(createdAt).inDays;
+
+        if (daysAgo >= 0 && daysAgo < 7) {
+          dailyRevenue[6 - daysAgo] += amount;
+        }
+      }
+
+      return dailyRevenue;
+    } catch (e) {
+      print('Erro ao buscar receita de 7 dias: $e');
+      return [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0];
+    }
+  }
 }

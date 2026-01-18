@@ -86,4 +86,35 @@ class UserService {
       return 0;
     }
   }
+
+  /// Retorna contagem de usuários por status (ativo/inativo).
+  Future<Map<String, int>> getUserCountByStatus() async {
+    try {
+      final snapshot = await _firestore.collection('users').get();
+      final users = snapshot.docs
+          .map((doc) => User.fromMap(doc.data() as Map<String, dynamic>, doc.id))
+          .toList();
+
+      final countByStatus = {
+        'active': 0,
+        'inactive': 0,
+      };
+
+      for (var user in users) {
+        if (user.isActive) {
+          countByStatus['active'] = (countByStatus['active'] ?? 0) + 1;
+        } else {
+          countByStatus['inactive'] = (countByStatus['inactive'] ?? 0) + 1;
+        }
+      }
+
+      return countByStatus;
+    } catch (e) {
+      print('Erro ao contar usuários por status: $e');
+      return {
+        'active': 0,
+        'inactive': 0,
+      };
+    }
+  }
 }

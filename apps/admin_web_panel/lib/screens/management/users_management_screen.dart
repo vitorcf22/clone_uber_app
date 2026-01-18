@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:admin_web_panel/models/user.dart';
 import 'package:admin_web_panel/services/user_service.dart';
+import 'package:admin_web_panel/widgets/advanced_filter_widget.dart';
 import 'package:intl/intl.dart';
 
 class UsersManagementScreen extends StatefulWidget {
@@ -14,11 +15,22 @@ class _UsersManagementScreenState extends State<UsersManagementScreen> {
   final UserService _userService = UserService();
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
+  String _filterStatus = 'All';
+  int _currentPage = 1;
+  final int _itemsPerPage = 15;
 
   @override
   void dispose() {
     _searchController.dispose();
     super.dispose();
+  }
+
+  void _applyFilters(Map<String, dynamic> filters) {
+    setState(() {
+      _searchQuery = (filters['search'] as String? ?? '').toLowerCase();
+      _filterStatus = filters['status'] as String? ?? 'All';
+      _currentPage = 1;
+    });
   }
 
   @override
@@ -34,22 +46,10 @@ class _UsersManagementScreenState extends State<UsersManagementScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Search Bar
-            TextField(
-              controller: _searchController,
-              decoration: InputDecoration(
-                hintText: 'Buscar usuários por email ou nome...',
-                prefixIcon: const Icon(Icons.search),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                contentPadding: const EdgeInsets.symmetric(vertical: 12),
-              ),
-              onChanged: (value) {
-                setState(() {
-                  _searchQuery = value.toLowerCase();
-                });
-              },
+            // Advanced Filter Widget
+            AdvancedFilterWidget(
+              filterOptions: const ['status'],
+              onApplyFilters: _applyFilters,
             ),
             const SizedBox(height: 24),
 
@@ -75,10 +75,24 @@ class _UsersManagementScreenState extends State<UsersManagementScreen> {
 
                   final allUsers = snapshot.data ?? [];
                   final filteredUsers = allUsers
-                      .where((user) =>
-                          user.email.toLowerCase().contains(_searchQuery) ||
-                          user.name.toLowerCase().contains(_searchQuery))
+                      .where((user) {
+                        bool matchSearch = _searchQuery.isEmpty ||
+                            user.email.toLowerCase().contains(_searchQuery) ||
+                            user.name.toLowerCase().contains(_searchQuery);
+
+                        bool matchStatus = _filterStatus == 'All' ||
+                            (_filterStatus == 'Active' && user.isActive) ||
+                            (_filterStatus == 'Inactive' && !user.isActive);
+
+                        return matchSearch && matchStatus;
+                      })
                       .toList();
+
+                  // Pagination
+                  final totalPages = (filteredUsers.length / _itemsPerPage).ceil();
+                  final startIndex = (_currentPage - 1) * _itemsPerPage;
+                  final endIndex = (startIndex + _itemsPerPage).clamp(0, filteredUsers.length);
+                  final paginatedUsers = filteredUsers.sublist(startIndex, endIndex);
 
                   return SingleChildScrollView(
                     scrollDirection: Axis.horizontal,
@@ -94,7 +108,7 @@ class _UsersManagementScreenState extends State<UsersManagementScreen> {
                         DataColumn(label: Text('Criado em')),
                         DataColumn(label: Text('Ações')),
                       ],
-                      rows: filteredUsers.map((user) {
+                      rows: paginatedUsers.map((user) {
                         return DataRow(
                           cells: [
                             DataCell(
@@ -159,6 +173,30 @@ class _UsersManagementScreenState extends State<UsersManagementScreen> {
                     ),
                   );
                 },
+              ),
+            ),
+            const SizedBox(height: 16),
+            // Pagination Controls
+            Center(
+              child: Wrap(
+                spacing: 8,
+                alignment: WrapAlignment.center,
+                children: [
+                  ElevatedButton(
+                    onPressed: _currentPage > 1
+                        ? () => setState(() => _currentPage--)
+                        : null,
+                    child: const Text('Anterior'),
+                  ),
+                  Text('Página $_currentPage de ${((filteredUsers.length / _itemsPerPage).ceil())}'),
+                  ElevatedButton(
+                    onPressed: _currentPage <
+                            (filteredUsers.length / _itemsPerPage).ceil()
+                        ? () => setState(() => _currentPage++)
+                        : null,
+                    child: const Text('Próxima'),
+                  ),
+                ],
               ),
             ),
           ],

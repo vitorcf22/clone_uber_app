@@ -14,6 +14,8 @@ class _DriversManagementScreenState extends State<DriversManagementScreen> {
   final DriverService _driverService = DriverService();
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
+  int _currentPage = 1;
+  final int _itemsPerPage = 15;
 
   @override
   void dispose() {
@@ -80,6 +82,12 @@ class _DriversManagementScreenState extends State<DriversManagementScreen> {
                           driver.name.toLowerCase().contains(_searchQuery))
                       .toList();
 
+                  // Pagination
+                  final totalPages = (filteredDrivers.length / _itemsPerPage).ceil();
+                  final startIndex = (_currentPage - 1) * _itemsPerPage;
+                  final endIndex = (startIndex + _itemsPerPage).clamp(0, filteredDrivers.length);
+                  final paginatedDrivers = filteredDrivers.sublist(startIndex, endIndex);
+
                   return SingleChildScrollView(
                     scrollDirection: Axis.horizontal,
                     child: DataTable(
@@ -95,7 +103,7 @@ class _DriversManagementScreenState extends State<DriversManagementScreen> {
                         DataColumn(label: Text('Criado em')),
                         DataColumn(label: Text('Ações')),
                       ],
-                      rows: filteredDrivers.map((driver) {
+                      rows: paginatedDrivers.map((driver) {
                         return DataRow(
                           cells: [
                             DataCell(
@@ -168,6 +176,30 @@ class _DriversManagementScreenState extends State<DriversManagementScreen> {
                     ),
                   );
                 },
+              ),
+            ),
+            const SizedBox(height: 16),
+            // Pagination Controls
+            Center(
+              child: Wrap(
+                spacing: 8,
+                alignment: WrapAlignment.center,
+                children: [
+                  ElevatedButton(
+                    onPressed: _currentPage > 1
+                        ? () => setState(() => _currentPage--)
+                        : null,
+                    child: const Text('Anterior'),
+                  ),
+                  Text('Página $_currentPage de ${((filteredDrivers.length / _itemsPerPage).ceil())}'),
+                  ElevatedButton(
+                    onPressed: _currentPage <
+                            (filteredDrivers.length / _itemsPerPage).ceil()
+                        ? () => setState(() => _currentPage++)
+                        : null,
+                    child: const Text('Próxima'),
+                  ),
+                ],
               ),
             ),
           ],

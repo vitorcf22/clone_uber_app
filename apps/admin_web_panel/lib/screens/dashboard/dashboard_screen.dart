@@ -209,43 +209,70 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ),
             ),
             const SizedBox(height: 24),
+            // Pie Charts com dados reais
             Row(
               children: [
                 Expanded(
-                  child: StatusPieChart(
-                    title: 'Distribuição de Corridas por Status',
-                    dataMap: {
-                      'Aguardando': 45,
-                      'Em Andamento': 23,
-                      'Concluída': 128,
-                      'Cancelada': 12,
-                    },
-                    colorMap: {
-                      'Aguardando': Colors.orange,
-                      'Em Andamento': Colors.blue,
-                      'Concluída': Colors.green,
-                      'Cancelada': Colors.red,
+                  child: FutureBuilder<Map<String, int>>(
+                    future: _rideService.getRideCountByStatus(),
+                    builder: (context, snapshot) {
+                      if (snapshot.hasData) {
+                        final data = snapshot.data!;
+                        return StatusPieChart(
+                          title: 'Distribuição de Corridas por Status',
+                          dataMap: {
+                            'Aguardando': data['pending'] ?? 0,
+                            'Em Andamento': data['in_progress'] ?? 0,
+                            'Concluída': data['completed'] ?? 0,
+                            'Cancelada': data['cancelled'] ?? 0,
+                          },
+                          colorMap: {
+                            'Aguardando': Colors.orange,
+                            'Em Andamento': Colors.blue,
+                            'Concluída': Colors.green,
+                            'Cancelada': Colors.red,
+                          },
+                        );
+                      }
+                      return Center(
+                        child: CircularProgressIndicator(
+                          valueColor: AlwaysStoppedAnimation(Colors.deepPurple.shade600),
+                        ),
+                      );
                     },
                   ),
                 ),
                 const SizedBox(width: 24),
                 Expanded(
-                  child: StatusPieChart(
-                    title: 'Distribuição de Usuários',
-                    dataMap: {
-                      'Ativos': 234,
-                      'Inativos': 45,
-                    },
-                    colorMap: {
-                      'Ativos': Colors.green,
-                      'Inativos': Colors.grey,
+                  child: FutureBuilder<Map<String, int>>(
+                    future: _userService.getUserCountByStatus(),
+                    builder: (context, snapshot) {
+                      if (snapshot.hasData) {
+                        final data = snapshot.data!;
+                        return StatusPieChart(
+                          title: 'Distribuição de Usuários',
+                          dataMap: {
+                            'Ativos': data['active'] ?? 0,
+                            'Inativos': data['inactive'] ?? 0,
+                          },
+                          colorMap: {
+                            'Ativos': Colors.green,
+                            'Inativos': Colors.grey,
+                          },
+                        );
+                      }
+                      return Center(
+                        child: CircularProgressIndicator(
+                          valueColor: AlwaysStoppedAnimation(Colors.deepPurple.shade600),
+                        ),
+                      );
                     },
                   ),
                 ),
               ],
             ),
             const SizedBox(height: 24),
-            // Gráfico de Receita
+            // Gráfico de Receita com dados reais
             Card(
               elevation: 4,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -262,74 +289,94 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       ),
                     ),
                     const SizedBox(height: 16),
-                    SizedBox(
-                      height: 300,
-                      child: LineChart(
-                        LineChartData(
-                          gridData: GridData(show: true),
-                          titlesData: FlTitlesData(
-                            leftTitles: AxisTitles(
-                              sideTitles: SideTitles(
-                                showTitles: true,
-                                reservedSize: 50,
-                                getTitlesWidget: (value, meta) {
-                                  return Text(
-                                    'R\$ ${value.toStringAsFixed(0)}',
-                                    style: const TextStyle(fontSize: 10),
-                                  );
-                                },
+                    FutureBuilder<List<double>>(
+                      future: _rideService.get7DayRevenue(),
+                      builder: (context, snapshot) {
+                        if (snapshot.hasData) {
+                          final revenueData = snapshot.data!;
+                          final maxY = revenueData.isNotEmpty
+                              ? (revenueData.reduce((a, b) => a > b ? a : b) * 1.2)
+                              : 5000;
+
+                          return SizedBox(
+                            height: 300,
+                            child: LineChart(
+                              LineChartData(
+                                gridData: GridData(show: true),
+                                titlesData: FlTitlesData(
+                                  leftTitles: AxisTitles(
+                                    sideTitles: SideTitles(
+                                      showTitles: true,
+                                      reservedSize: 50,
+                                      getTitlesWidget: (value, meta) {
+                                        return Text(
+                                          'R\$ ${value.toStringAsFixed(0)}',
+                                          style: const TextStyle(fontSize: 10),
+                                        );
+                                      },
+                                    ),
+                                  ),
+                                  bottomTitles: AxisTitles(
+                                    sideTitles: SideTitles(
+                                      showTitles: true,
+                                      getTitlesWidget: (value, meta) {
+                                        final days = [
+                                          'Seg',
+                                          'Ter',
+                                          'Qua',
+                                          'Qui',
+                                          'Sex',
+                                          'Sab',
+                                          'Dom'
+                                        ];
+                                        final index = value.toInt();
+                                        return Text(
+                                          index < days.length ? days[index] : '',
+                                          style: const TextStyle(fontSize: 10),
+                                        );
+                                      },
+                                    ),
+                                  ),
+                                ),
+                                borderData: FlBorderData(show: true),
+                                minX: 0,
+                                maxX: 6,
+                                minY: 0,
+                                maxY: maxY,
+                                lineBarsData: [
+                                  LineBarData(
+                                    spots: [
+                                      FlSpot(0, revenueData[0]),
+                                      FlSpot(1, revenueData[1]),
+                                      FlSpot(2, revenueData[2]),
+                                      FlSpot(3, revenueData[3]),
+                                      FlSpot(4, revenueData[4]),
+                                      FlSpot(5, revenueData[5]),
+                                      FlSpot(6, revenueData[6]),
+                                    ],
+                                    isCurved: true,
+                                    color: Colors.deepPurple,
+                                    barWidth: 3,
+                                    belowBarData: BarAreaData(
+                                      show: true,
+                                      color: Colors.deepPurple.withOpacity(0.2),
+                                    ),
+                                    dotData: FlDotData(show: true),
+                                  ),
+                                ],
                               ),
                             ),
-                            bottomTitles: AxisTitles(
-                              sideTitles: SideTitles(
-                                showTitles: true,
-                                getTitlesWidget: (value, meta) {
-                                  final days = [
-                                    'Seg',
-                                    'Ter',
-                                    'Qua',
-                                    'Qui',
-                                    'Sex',
-                                    'Sab',
-                                    'Dom'
-                                  ];
-                                  final index = value.toInt();
-                                  return Text(
-                                    index < days.length ? days[index] : '',
-                                    style: const TextStyle(fontSize: 10),
-                                  );
-                                },
-                              ),
+                          );
+                        }
+                        return SizedBox(
+                          height: 300,
+                          child: Center(
+                            child: CircularProgressIndicator(
+                              valueColor: AlwaysStoppedAnimation(Colors.deepPurple.shade600),
                             ),
                           ),
-                          borderData: FlBorderData(show: true),
-                          minX: 0,
-                          maxX: 6,
-                          minY: 0,
-                          maxY: 5000,
-                          lineBarsData: [
-                            LineBarData(
-                              spots: const [
-                                FlSpot(0, 1200),
-                                FlSpot(1, 1900),
-                                FlSpot(2, 1500),
-                                FlSpot(3, 2300),
-                                FlSpot(4, 2100),
-                                FlSpot(5, 2800),
-                                FlSpot(6, 2500),
-                              ],
-                              isCurved: true,
-                              color: Colors.deepPurple,
-                              barWidth: 3,
-                              belowBarData: BarAreaData(
-                                show: true,
-                                color: Colors.deepPurple.withOpacity(0.2),
-                              ),
-                              dotData: FlDotData(show: true),
-                            ),
-                          ],
-                        ),
-                      ),
+                        );
+                      },
                     ),
                   ],
                 ),

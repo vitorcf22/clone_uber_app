@@ -13,6 +13,8 @@ class RidesMonitoringScreen extends StatefulWidget {
 class _RidesMonitoringScreenState extends State<RidesMonitoringScreen> {
   final RideService _rideService = RideService();
   String _selectedStatus = 'all'; // all, pending, in_progress, completed, cancelled
+  int _currentPage = 1;
+  final int _itemsPerPage = 15;
 
   final List<String> _statusOptions = [
     'all',
@@ -92,6 +94,12 @@ class _RidesMonitoringScreenState extends State<RidesMonitoringScreen> {
                           .where((ride) => ride.status == _selectedStatus)
                           .toList();
 
+                  // Pagination
+                  final totalPages = (filteredRides.length / _itemsPerPage).ceil();
+                  final startIndex = (_currentPage - 1) * _itemsPerPage;
+                  final endIndex = (startIndex + _itemsPerPage).clamp(0, filteredRides.length);
+                  final paginatedRides = filteredRides.sublist(startIndex, endIndex);
+
                   return SingleChildScrollView(
                     scrollDirection: Axis.horizontal,
                     child: DataTable(
@@ -106,7 +114,7 @@ class _RidesMonitoringScreenState extends State<RidesMonitoringScreen> {
                         DataColumn(label: Text('Criado em')),
                         DataColumn(label: Text('Ações')),
                       ],
-                      rows: filteredRides.map((ride) {
+                      rows: paginatedRides.map((ride) {
                         return DataRow(
                           cells: [
                             DataCell(
@@ -192,6 +200,30 @@ class _RidesMonitoringScreenState extends State<RidesMonitoringScreen> {
                     ),
                   );
                 },
+              ),
+            ),
+            const SizedBox(height: 16),
+            // Pagination Controls
+            Center(
+              child: Wrap(
+                spacing: 8,
+                alignment: WrapAlignment.center,
+                children: [
+                  ElevatedButton(
+                    onPressed: _currentPage > 1
+                        ? () => setState(() => _currentPage--)
+                        : null,
+                    child: const Text('Anterior'),
+                  ),
+                  Text('Página $_currentPage de ${((filteredRides.length / _itemsPerPage).ceil())}'),
+                  ElevatedButton(
+                    onPressed: _currentPage <
+                            (filteredRides.length / _itemsPerPage).ceil()
+                        ? () => setState(() => _currentPage++)
+                        : null,
+                    child: const Text('Próxima'),
+                  ),
+                ],
               ),
             ),
           ],
